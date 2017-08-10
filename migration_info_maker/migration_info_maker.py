@@ -38,7 +38,7 @@ def make_data_migration_info(total_backend_count, table_name, partition_start, p
         backend_number[target_ip_address] = 0
         backend_list[target_ip_address] = []
 
-    mfile = open('migration_info.dat', 'w')
+    mfile = open('./migration_info.dat', 'w')
 
     for row in result:
         table_key = row[0]
