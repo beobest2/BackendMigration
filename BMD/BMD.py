@@ -11,6 +11,8 @@ import sys
 import os
 import md5
 import hashlib
+import socket
+import cPickle
 import M6
 import M6.Common.Server.TCPThreadServer as TCPThreadServer
 from M6.Common.DB import Backend
@@ -36,7 +38,6 @@ class BMD(object):
 			try:
 				line = self.sock.Readline().strip()
 				cmd_list = line.split(" ", 1)
-				print cmd_list
 				cmd = cmd_list[0].upper()
 				if cmd == "QUIT":
 					self.sock.SendMessage("+OK BYE\r\n")
@@ -50,9 +51,9 @@ class BMD(object):
 				elif cmd == "DELETE":
                     # 백엔드 삭제
 					ret_message = self.DELETE(cmd_list[1])
-				elif cmd == "TEST":
+				elif cmd == "DSDTEST":
                     # 백엔드 전송과 메타데이터 변경이 제대로 수행되었는지 테스팅
-					ret_message = self.TEST(cmd_list[1])
+					ret_message = self.DSDTEST(cmd_list[1])
 				elif cmd == "DLDADD":
                     # 마스터 노드의 DLD 정보 추가
 					ret_message = self.DLDADD(cmd_list[1])
@@ -272,10 +273,84 @@ class BMD(object):
 
 		return ret_message
 
-	def TEST(self, param):
-		ret_message = "+OK TEST SUCCESS\r\n"
+	def DSDTEST(self, param):
+		paramList = param.strip().split(',')
+		if len(paramList) != 5:
+			msg = "-ERR DSDTEST param error!\r\n"
+			return msg
 
-		return ret_message
+		table_name = paramList[0].upper()
+		table_key = paramList[1]
+		table_partition = paramList[2]
+		src_ip = paramList[3]
+		dst_ip = paramList[4]
+		dsd_port =  Default.PORT['DSD']
+		
+		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		sock.connect((dst_ip, dsd_port))
+		s = sock.makefile("rb")
+
+		#connect OK message
+		msg = s.readline()
+		if msg[0] == '-':
+			return msg
+
+		#field separator
+		sock.sendall('SET_FIELD_SEP %s\r\n' % Default.FIELD_SEPARATOR)
+		msg = s.readline()
+		if msg[0] == '-':
+			return msg
+
+		sock.sendall('SET_RECORD_SEP %s\r\n' % Default.RECORD_SEPARATOR)
+		msg = s.readline()
+		if msg[0] == '-':
+			return msg
+
+		file_path = IRISFileSystem.exists(table_name, table_key, table_partition)
+
+		if file_path == None:
+			msg  = "-ERR No Backend %s, %s, %s\r\n" % (table_name, table_key, table_partition)
+			return msg
+
+		head_line = 1
+		head_info = 'FILE=%s' % (file_path)
+
+		query = 'SELECT COUNT(*) FROM %s' % table_name
+		param = '%s\n%s\n%s' % (head_line, head_info, query)
+
+		param_size = len(param)
+		param = 'EXECUTE_PICKLE %s\n%s' % (param_size, param)
+		sock.sendall(param)
+
+		fetch_data = []
+		while True:
+			msg = s.readline()
+
+			if msg != None and len(msg.strip().split(" ", 1)) == 2:
+				_type, param = msg.strip().split(" ", 1)
+
+			if msg == None:
+				break
+			elif _type.upper() in ("+OK", "-ERR"):
+				result = msg
+				break
+
+			data_length = int(param)
+			if data_length == 0:
+				break
+
+			data = s.read(data_length)
+			fetch_data += cPickle.loads(data)
+
+			sock.sendall('CONT_PICKLE\r\n')
+
+		s.close()
+		sock.close()
+
+		if msg[0] == '+':
+			msg = '+OK DSDTEST SUCCESS\r\n'
+
+		return msg
 
 	def DLDADD(self, param):
         # param : table_name, key, partition, src_ip, dst_ip

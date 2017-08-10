@@ -47,9 +47,9 @@ def DEL(param):
 
 
 if __name__ == '__main__':
-    table_name = 'test'
-    key = 'k5'
-    partition = '20170806040000'
+    table_name = 'test1'
+    key = 'k8'
+    partition = '20170801000000'
     src_ip = '192.168.123.123'
     dst_ip = '192.168.123.201'
 
