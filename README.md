@@ -25,7 +25,7 @@ scp migraton_info.dat [user]@[ip]:[path]
 ```
 python BMD.py
 ```
-7. 기존에 데이터 노드에서 BMDClient.py 실행
+7. 기존 데이터 노드에서 각각 BMDClient.py 실행
 ```
 python BMDClient.py
 ```
