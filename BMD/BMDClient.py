@@ -1,6 +1,10 @@
+import socket
+import sys
+import cPickle
 import M6.Common.Default as Default
 
 from M6.Common.FileSystem import IRISFileSystem
+from M6.Common.FileSystem.Storage.DiskStorage import DiskStorage
 from M6.Common.Protocol.ClientProc import Client as ClientProc
 from M6.Common.Protocol.ClientProc import __SendCMD__
 
@@ -47,6 +51,7 @@ def add_ldld(paramList):
 	if file_path == None:
 		ret_message = ["-ERR No Backend %s, %s, %s\r\n" % (table_name, table_key, table_partition)]
 
+	#FIXME : ssd -> slave_ssd , disk -> slave_disk : using specific name 
 	if 'ssd' in file_path:
 		target = 'SSD'
 	elif 'disk' in file_path:
@@ -129,6 +134,25 @@ def del_backend(paramList):
 
 	return ret_message
 
+def dsd_test(paramList):
+	table_name = paramList[0].upper()
+	table_key = paramList[1]
+	table_partition = paramList[2]
+	src_ip = paramList[3]
+	dst_ip = paramList[4]
+	dsd_port =  Default.PORT['DSD']
+
+	cmd = 'DSDTEST %s,%s,%s,%s,%s\r\n' % (table_name, table_key, table_partition, src_ip, dst_ip)
+
+	c = Client(dst_ip, 9999)
+	c.Connect()
+	ret_message = c.SendCMD(cmd)
+	print ret_message
+	c.Close()
+
+	return ret_message
+
+
 
 if __name__ == "__main__":
 	my_ip = Default.NODE_IP
@@ -144,30 +168,42 @@ if __name__ == "__main__":
 				ret_message = backend_send(paramList)
 				print ret_message
 				if ret_message[0][0] == '-':
+					print ret_message
 					fail_list.append(paramList)
 					continue
 			
 				ret_message = add_ldld(paramList)
 				print ret_message
 				if ret_message[0][0] == '-':
+					print ret_message
 					fail_list.append(paramList)
 					continue
 				
 				ret_message = add_dld(paramList)
 				print ret_message
 				if ret_message[0][0] == '-':
+					print ret_message
 					fail_list.append(paramList)
 					continue
 
 				ret_message = del_dld(paramList)
 				print ret_message
 				if ret_message[0][0] == '-':
+					print ret_message
 					fail_list.append(paramList)
 					continue
 
 				ret_message = del_ldld(paramList)
 				print ret_message
 				if ret_message[0][0] == '-':
+					print ret_message
+					fail_list.append(paramList)
+					continue
+			   
+				ret_message = dsd_test(paramList)
+				print ret_message
+				if ret_message[0][0] == '-':
+					print ret_message
 					fail_list.append(paramList)
 					continue
 
@@ -176,4 +212,3 @@ if __name__ == "__main__":
 				if ret_message[0][0] == '-':
 					fail_list.append(paramList)
 					continue
-
