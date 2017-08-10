@@ -163,7 +163,7 @@ def test_dld(paramList):
 	if find_dld_match(msg, dst_ip, table_key, table_partition) == False:
 		ret_message = "-ERR DLDTEST backend data is polluted.\r\n"
 
-	return ret_message
+	return [ret_message]
 
 def find_dld_match(dld_result_list, dst_ip, table_key, table_partition):
 	rtn = False
