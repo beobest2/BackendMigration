@@ -13,7 +13,19 @@ ex )  기존 2대의 노드가 있고 3대가 추가될 경우
 192.168.000.003
 ```
 
-4. 마스터 노드에서 run1.py 를 실행하여 파티션과 테이블명 입력
+4. 마스터 노드에서 migration_info_maker.py 를 실행하여 파티션과 테이블명 입력
+```
+python migration_info_maker.py
+```
 5. 생성된 migration_info.dat 파일을 기존 데이터 노드의 BMDClient.py가 있는 디렉토리로 복사
+```
+scp migraton_info.dat [user]@[ip]:[path]
+```
 6. 마스터노드를 포함한 모든 노드에서 BMD.py 실행
+```
+python BMD.py
+```
 7. 기존에 데이터 노드에서 BMDClient.py 실행
+```
+python BMDClient.py
+```
