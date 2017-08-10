@@ -5,11 +5,6 @@ import API.M6 as M6
 from M6.Common.DB import Backend
 from M6.Common.DB import BackendReader
 
-cur_data_node = 2
-add_data_node = 3
-total_data_node = cur_data_node + add_data_node
-
-add_ip_list = [ "192.168.123.203", "192.168.123.204", "192.168.123.205" ]
 backend_list = dict()
 backend_number = dict()
     
@@ -34,7 +29,7 @@ def get_location_hint(partition_start):
     partition_end = datetime.datetime.strftime(p_endtime, '%Y%m%d%H%M%S')
     return partition_end
  
-def make_data_migration_info(total_backend_count, table_name, partition_start, partition_end):
+def make_data_migration_info(total_backend_count, table_name, partition_start, partition_end, total_data_node, add_ip_list):
     max_backend_per_node = total_backend_count/total_data_node
 
     result = get_backend_data(table_name, partition_start, partition_end)
@@ -97,6 +92,22 @@ def get_backend_data(table_name, partition_start, partition_end):
     return result
 
 if __name__ == '__main__':
+    total_data_node = 0
+    add_ip_list = []
+
+    f = open("./config", "r")
+    total_data_node = int(f.readline())
+    while True:
+        line = f.readline()
+        if not line:
+            break
+        add_ip_list.append(line.strip())
+
+    f.close()
+
+    print "total data node count : ", total_data_node
+    print "add ip list : ", add_ip_list
+
     partition_start = raw_input("Partiton Date : ")
 
     if (len(partition_start) != 14):
@@ -111,5 +122,5 @@ if __name__ == '__main__':
     
     partition_end = get_location_hint(partition_start)
     total_backend_count = get_local_backend_count(table_name, partition_start, partition_end)
-    make_data_migration_info(total_backend_count, table_name, partition_start, partition_end)
+    make_data_migration_info(total_backend_count, table_name, partition_start, partition_end, total_data_node, add_ip_list)
 
