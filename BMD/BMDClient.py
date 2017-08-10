@@ -166,6 +166,7 @@ def test_dld(paramList):
 	return ret_message
 
 def find_dld_match(dld_result_list, dst_ip, table_key, table_partition):
+	rtn = False
 	#print dld_result_list
 	for backendInfo in dld_result_list:
 		itemList = backendInfo.strip().split(",")
