@@ -31,7 +31,7 @@ scp migraton_info.dat [user]@[ip]:[path]
 ```
 python BMD.py
 ```
-7.  ( IRIS 모든 노드가 VALID, 모든 노드에서 BMD.py 서버가 실행되는 상태 ) 기존 데이터 노드에서 각각 BMDClient.py 실행
+7.  ( IRIS 모든 노드가 VALID, 모든 노드에서 BMD.py 서버가 실행되는 상태 ) ""기존 데이터 노드"" 에서 각각 BMDClient.py 실행
 ```
 python BMDClient.py
 ```
