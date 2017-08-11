@@ -54,9 +54,9 @@ def add_ldld(paramList):
 		ret_message = ["-ERR No Backend %s, %s, %s\r\n" % (table_name, table_key, table_partition)]
 
 	#FIXME : ssd -> slave_ssd , disk -> slave_disk : using specific name 
-	if 'ssd' in file_path:
+	if 'slave_ssd' in file_path:
 		target = 'SSD'
-	elif 'disk' in file_path:
+	elif 'slave_disk' in file_path:
 		target = 'HDD'
 	else:
 		target = 'RAM'

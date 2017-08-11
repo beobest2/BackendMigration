@@ -108,9 +108,16 @@ class BMD(object):
 		#print "src_file_path: ", src_file_path
 		if src_file_path == None:
 			return "-ERR there is no backend at src\r\n"
-		dst_file_path = src_file_path
+
+		#FIXME : ssd -> slave_ssd , disk -> slave_disk : using specific name
+		if 'slave_ssd' in src_file_path:
+			target = 'SSD'
+		elif 'slave_disk' in src_file_path:
+			target = 'HDD'
+		else:
+			target = 'RAM'
 		
-		#print "file_path : ", dst_file_path 
+		print "file_path : ", src_file_path 
 
 		try:
 			fd = open(src_file_path, "rb")
@@ -130,7 +137,7 @@ class BMD(object):
 		hash_value = hash.hexdigest()
 
 		tkp = table_name + ',' + key + ',' + partition
-		send_message = "RECV %d:%s:%s:%s\r\n" % (file_size, hash_value, dst_file_path, tkp)
+		send_message = "RECV %d:%s:%s:%s\r\n" % (file_size, hash_value, target, tkp)
 		
 		s = Socket()
 		s.Connect(dst_ip, self.port)
@@ -182,7 +189,7 @@ class BMD(object):
 
 		data_length = paramList[0]
 		hex_data = paramList[1]
-		dst_file_path = paramList[2]
+		target = paramList[2]
 		tkp = paramList[3]
 
 		tkpList = tkp.strip().split(",")
@@ -192,11 +199,15 @@ class BMD(object):
 
 		#print "data length : ", data_length
 		#print "hex data : ", hex_data
-		#print "dst file path : ", dst_file_path
+		#print "target : ", target
 		#print "table_name : ", table_name
 		#print "key : ", key
 		#print "partition : ", partition
-			
+
+		link_name == 'part00'	
+		dst_file_path = PathMaker.make_backend_path(table_name, key, partition, target, link_name)
+		print "dst_file_path : ", dst_file_path	
+
 		while True:
 			try:
 				data = self.sock.Read(int(data_length))
