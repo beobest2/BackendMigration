@@ -9,6 +9,7 @@ from M6.Common.Protocol.ClientProc import __SendCMD__
 
 import sys
 import os
+import os.path
 import md5
 import hashlib
 import socket
@@ -219,10 +220,9 @@ class BMD(object):
 				if retry_msg[0] == '-':
 					return retry_msg
 		try:
-			#if DiskStorage.exists(table_name, key, partition) == None:
-			if IRISFileSystem.exists(table_name, key, partition) == None:
+			path = os.path.dirname(dst_file_path)
+			if os.path.exists(path) == False:
 				#dst_file_path 경로 생성
-				path = os.path.dirname(dst_file_path)
 				os.makedirs(path)
 			
 			fd = open(dst_file_path, "wb")
