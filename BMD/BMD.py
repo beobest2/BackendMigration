@@ -117,7 +117,7 @@ class BMD(object):
 		else:
 			target = 'RAM'
 		
-		print "file_path : ", src_file_path 
+		#print "file_path : ", src_file_path 
 
 		try:
 			fd = open(src_file_path, "rb")
@@ -206,7 +206,7 @@ class BMD(object):
 
 		link_name = 'part00'	
 		dst_file_path = PathMaker.make_backend_path(table_name, key, partition, target, link_name)
-		print "dst_file_path : ", dst_file_path	
+		#print "dst_file_path : ", dst_file_path	
 
 		while True:
 			try:
