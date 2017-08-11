@@ -213,6 +213,10 @@ if __name__ == "__main__":
 			dst_ip = paramList[4]
 
 			if my_ip == src_ip:
+				
+				print "---"
+				print paramList
+
 				ret_message = backend_send(paramList)
 				print ret_message
 				if ret_message[0][0] == '-':

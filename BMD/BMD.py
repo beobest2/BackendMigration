@@ -30,7 +30,7 @@ class BMD(object):
 		self.WELCOME = "+OK Welcome BMD Server\r\n"
 		self.buffer_size = 4096
 		self.port = 9999
-		print "init "
+		#print "init "
 
 	def run(self):
 		self.sock.SendMessage(self.WELCOME)
@@ -82,7 +82,7 @@ class BMD(object):
 			pass
                 
 	def SEND(self, param):
-		print "SEND", param
+		#print "SEND", param
 		ret_message = "+OK SEND SUCCESS\r\n"
 		# ex) SEND table_name,key,partition,src_ip,dst_ip
 		# paramList = [table_name,key,partition, src_ip, dst_ip]
@@ -98,23 +98,23 @@ class BMD(object):
 		src_ip = paramList[3]
 		dst_ip = paramList[4]
 		
-		print "table_name : ", table_name
-		print "key : ", key
-		print "partition : ", partition
+		#print "table_name : ", table_name
+		#print "key : ", key
+		#print "partition : ", partition
 		
 		#src_file_path = DiskStorage.exists(table_name, key, partition)
 		src_file_path = IRISFileSystem.exists(table_name, key, partition)
-		print "src_file_path: ", src_file_path
+		#print "src_file_path: ", src_file_path
 		if src_file_path == None:
 			return "-ERR there is no backend at src\r\n"
 		dst_file_path = src_file_path
 		
-		print "file_path : ", dst_file_path 
+		#print "file_path : ", dst_file_path 
 
 		try:
 			fd = open(src_file_path, "rb")
 			data = fd.read()
-			print "read data : ", data
+			#print "read data : ", data
 		except:
 			return "-ERR file read error\r\n"
 		finally:
@@ -172,12 +172,12 @@ class BMD(object):
 
 
 	def RECV(self, param):
-		print "RECV" , param
+		#print "RECV" , param
 		ret_message = "+OK RECV SUCCESS\r\n"
 		hash_value = ''
 		# param = file_size:hash_value:file_path:tkp
 		paramList = param.strip().split(":")
-		print paramList
+		#print paramList
 
 		data_length = paramList[0]
 		hex_data = paramList[1]
@@ -189,12 +189,12 @@ class BMD(object):
 		key = tkpList[1]
 		partition = tkpList[2]
 
-		print "data length : ", data_length
-		print "hex data : ", hex_data
-		print "dst file path : ", dst_file_path
-		print "table_name : ", table_name
-		print "key : ", key
-		print "partition : ", partition
+		#print "data length : ", data_length
+		#print "hex data : ", hex_data
+		#print "dst file path : ", dst_file_path
+		#print "table_name : ", table_name
+		#print "key : ", key
+		#print "partition : ", partition
 			
 		while True:
 			try:
@@ -224,12 +224,11 @@ class BMD(object):
 				#dst_file_path 경로 생성
 				path = os.path.dirname(dst_file_path)
 				os.makedirs(path)
-			else:
-				return "-ERR backend already exists\r\n"
+			
 			fd = open(dst_file_path, "wb")
 			fd.write(data)
 		except Exception, e:
-			print "-err file write error !" + str(e)
+			#print "-err file write error !" + str(e)
 			return "-ERR file write error" + e.message + "\r\n"
 		finally:
 			try:
@@ -257,10 +256,10 @@ class BMD(object):
 
 		try:
 			file_path = DiskStorage.exists(table_name, key, partition)
-			print table_name
-			print key
-			print partition
-			print file_path
+			#print table_name
+			#print key
+			#print partition
+			#print file_path
 
 			if file_path is None:
 				file_path = PathMaker.make_base_path(table_name, key, partition)
@@ -434,7 +433,7 @@ class BMD(object):
 							TABLE_PARTITION = '%s' AND \
 							NODE_ID = '%s';" % (key, partition, node_id)
        
-			print del_dld_query 
+			#print del_dld_query 
 			c.execute(del_dld_query)
 		except Exception, err:
 			ret_message = "-ERR DLDDEL %s\r\n" % str(err)
@@ -507,7 +506,7 @@ class BMD(object):
 		return ret_message
 
 if __name__ == '__main__':
-	print "Server start "
+	print "BMD Server Start "
 	port = 9999
 
 	server = TCPThreadServer.Server(port, BMD, None)
