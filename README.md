@@ -1,3 +1,5 @@
+# BMD 사용법
+
 1. PL을 통해 모든 노드의 백엔드 이동
 ```
 PL RAM
@@ -35,3 +37,47 @@ python BMD.py
 ```
 python BMDClient.py
 ```
+
+# SYS_TABLE_MIGRATION 사용법
+
+1. 모든 노드의 IRIS 종료 
+    - ~/IRIS/bin/Admin/IRIS-Shutdown
+2. 모든 노드의 library를 kddi 버전으로 교체 
+    - rm -rf ~/IRIS/lib/*
+    - cp ~/BackendMigration/SYS_TABLE_MIGRATION/src/lib/* ~/IRIS/lib/
+    - ln -s ~/IRIS/lib/IRIS_CORE_1.5.1_1-55-ged99bb0_ed99bb0.zip ~/IRIS/lib/M6.zip 
+3. 각각의 데이터 노드에서 ssd_data 생성 -> link 생성 
+    - mkdir -p ~/ssd_data
+    - mkdir ~/IRIS/data/slave_ssd
+    - ln -s ~/ssd_data ~/IRIS/data/slave_ssd/part00
+    - 해당 디렉토리 혹은 소프트링크가 제대로 생성되지 않는 경우 .system ssd 결과가 출력되지 않을 수 도있으니 주의할 것
+4. 각각의 데이터 노드의 conf/mps.conf에 PL_SSD, PL_RAM 추가 
+5. 각각의 데이터 노드의 IRIS/bin에 PL_SSD, PL_RAM 추가
+    - kddi IRIS의 PL_RAM, PL_SSD 복사 
+6. 마스터노드에서 create_sys_ssd_info.py 스크립트 실행
+7. 마스터노드의 IRIS/data/master에 있는 (SYS_TABLE_LOCATION 제외) 시스템 테이블을 scp를 이용해서 각 데이터 노드로 복사
+    - scp SYS\_\*\.DAT iris@192.168.xxx.xxx:~/IRIS/data/master
+    - .system ssd 확인
+
+8. 마스터 노드에서 modify_table_info.py를 실행시킨다. 
+9. ~/IRIS/data/monitor_data_test에 존재하는 스키마가 제대로 변경되었는지 확인한다. 
+10. 스키마가 제대로 변경된 경우, ~/IRIS/data/monitor_data를 삭제하고 스키마가 변경된 백엔드의 디렉토리명을 변경한다. 
+    - rm -rf ~/IRIS/data/monitor_data
+    - mv ~/IRIS/data/monitor_data_test ~/IRIS/data/monitor_data
+11. 각각의 데이터 노드에서 modify_table_size_info.py를 실행시킨다. 
+12. ~/IRIS/data/slave_disk/part00/SYS_TABLE_SIZE_INFO에 존재하는 스키마가 제대로 변경되었는지 확인한다. 
+13. 스키마가 제대로 변경된 경우, ~/IRIS/data/slave_disk/part00/SYS_TABLE_SIZE_INFO를 삭제하고 스키마가 변경된 백엔드의 디렉토리명을 변경한다. 
+    - rm -rf ~/IRIS/data/slave_disk/part00/SYS_TABLE_SIZE_INFO
+    - mv ~/IRIS/data/slave_disk/part00/SYS_TABLE_SIZE_INFO_TEST ~/IRIS/data/slave_disk/part00/SYS_TABLE_SIZE_INFO
+14. 모든 노드의 IRIS를 IRIS-Startup 
+    - ~/IRIS/bin/Admin/IRIS-Startup
+
+
+## SYS_TABLE_MIGRATION 실행 이후 확인해야할 사항들
+
+- SYS_TABLE_SIZE_INFO 테이블에 'SIZE_SSD', 'FNUM_SSD' 컬럼 추가 
+- .table size 커맨드에  'SIZE_SSD', 'FNUM_SSD' 컬럼 추가  
+- .system all 커맨드에   'SSD' , 'SSD_TOTAL_SIZE' 컬럼 추가 
+- .system ssd 커맨드 추가 
+- .show tables 커맨드에  'SSD_EXP_TIME'  컬럼 추가 
+- .statistics table 커맨드에 'TABLE_SIZE_SSD', 'NUM_OF_FILE_SSD' 컬럼 추가
