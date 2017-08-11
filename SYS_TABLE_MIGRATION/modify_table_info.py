@@ -2,7 +2,7 @@ import os
 import sqlite3
 import csv
 
-PATH = '../IRIS/data/monitor_data_test'
+PATH = '/home/iris/IRIS/data/monitor_data_test'
 
 def walk_directory(path):
     if not os.path.exists(path):

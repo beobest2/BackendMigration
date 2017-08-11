@@ -2,8 +2,8 @@ import os
 import sqlite3
 import csv
 
-RAM_PATH = '../IRIS/data/slave/SYS_TABLE_SIZE_INFO_TEST'
-DISK_PATH = '../IRIS/data/slave_disk/part00/SYS_TABLE_SIZE_INFO_TEST'
+RAM_PATH = '/home/iris/IRIS/data/slave/SYS_TABLE_SIZE_INFO_TEST'
+DISK_PATH = '/home/iris/IRIS/data/slave_disk/part00/SYS_TABLE_SIZE_INFO_TEST'
 
 def walk_directory(path):
     if not os.path.exists(path):
