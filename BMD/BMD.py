@@ -204,7 +204,7 @@ class BMD(object):
 		#print "key : ", key
 		#print "partition : ", partition
 
-		link_name == 'part00'	
+		link_name = 'part00'	
 		dst_file_path = PathMaker.make_backend_path(table_name, key, partition, target, link_name)
 		print "dst_file_path : ", dst_file_path	
 
