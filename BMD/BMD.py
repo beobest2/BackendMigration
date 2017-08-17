@@ -14,6 +14,7 @@ import md5
 import hashlib
 import socket
 import cPickle
+import glob
 import M6
 import M6.Common.Server.TCPThreadServer as TCPThreadServer
 from M6.Common.DB import Backend
@@ -499,18 +500,20 @@ class BMD(object):
 			return
 
 		table_name = paramList[0].upper()
-		key = paramList[1]
-		partition = paramList[2]
+		table_key = paramList[1]
+		table_partition = paramList[2]
 
 		try:
-			file_path = IRISFileSystem.exists(table_name, key, partition)
+			# exists가 굳이 필요한가??
+			#file_path = IRISFileSystem.exists(table_name, key, partition)
 
-			if file_path is None:
-				file_path = PathMaker.make_base_path(table_name, key, partition)
-				ret_message = "-ERR %s Backend Not Exists \r\n" % file_path
-				return ret_message
+			#if file_path is None:
+			#file_path = PathMaker.make_base_path(table_name, key, partition)
+			#ret_message = "-ERR DELETE %s Backend Not Exists \r\n" % file_path
+			#return ret_message
 
-			BackendLocator.delete_record(table_name, key, partition)
+
+			BackendLocator.delete_record(table_name, table_key, table_partition)
 		except Exception, err:
 			ret_message = "-ERR LDLDDEL %s\r\n" % str(err)
 

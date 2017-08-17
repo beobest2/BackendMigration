@@ -2,6 +2,7 @@ import socket
 import sys
 import cPickle
 import datetime
+import glob
 
 import M6.Common.Default as Default
 
@@ -25,12 +26,7 @@ class Client(ClientProc):
 		return ClientProc.SendCMD(self, msg, multiLine)
 
 
-def backend_send(paramList):
-	table_name = paramList[0].upper()
-	table_key = paramList[1]
-	table_partition = paramList[2]
-	src_ip = paramList[3]
-	dst_ip = paramList[4]
+def backend_send(table_name, table_key, table_partition, src_ip, dst_ip):
 
 	cmd = 'SEND %s,%s,%s,%s,%s\r\n' % (table_name, table_key, table_partition, src_ip, dst_ip)
 
@@ -41,19 +37,28 @@ def backend_send(paramList):
 
 	return ret_message
 
-def add_ldld(paramList):
-	table_name = paramList[0].upper()
-	table_key = paramList[1]
-	table_partition = paramList[2]
-	src_ip = paramList[3]
-	dst_ip = paramList[4]
-
+def add_ldld(table_name, table_key, table_partition, src_ip, dst_ip):
 	file_path = IRISFileSystem.exists(table_name, table_key, table_partition)
 
 	if file_path == None:
-		ret_message = ["-ERR No Backend %s, %s, %s\r\n" % (table_name, table_key, table_partition)]
+		part_yyyy = table_partition[:4]
+		part_mm = table_partition[4:6]
+		part_dd = table_partition[6:8]
+		base_path = "%s/%s/%s/%s/%s/%s_%s_%s.DAT" % (table_name, table_key, part_yyyy, part_mm, part_dd, table_name, table_key, table_partition)
 
-	#FIXME : ssd -> slave_ssd , disk -> slave_disk : using specific name 
+		slave_ram_dir = "%s/%s" % (Default.M6_SLAVE_DATA_DIR, base_path)
+		slave_disk_dir = "%s/%s" % (Default.M6_SLAVE_DATA_DISK_DIR, base_path)
+
+		if len(glob.glob(slave_ram_dir)) != 0:
+			file_path = slave_ram_dir[:-1]  + '%s_%s_%s.DAT' % (table_name, table_key, table_partition)
+		elif len(glob.glob(disk_ram_dir)) != 0:
+			file_path = slave_disk_dir[:-1]  + '%s_%s_%s.DAT' % (table_name, table_key, table_partition)
+			
+		if len(glob.glob(slave_ram_dir)) == 0 and len(glob.glob(slave_dir_dir)) == 0:
+			ret_message = ["-ERR No Backend %s, %s, %s\r\n" % (table_name, table_key, table_partition)]
+			return ret_message
+
+
 	if 'slave_ssd' in file_path:
 		target = 'SSD'
 	elif 'slave_disk' in file_path:
@@ -70,13 +75,7 @@ def add_ldld(paramList):
 
 	return ret_message
 
-def del_ldld(paramList):
-	table_name = paramList[0].upper()
-	table_key = paramList[1]
-	table_partition = paramList[2]
-	src_ip = paramList[3]
-	dst_ip = paramList[4]
-
+def del_ldld(table_name, table_key, table_partition, src_ip, dst_ip):
 	cmd = 'LDLDDEL %s,%s,%s,%s,%s\r\n' % (table_name, table_key, table_partition, src_ip, dst_ip)
 
 	c = Client(src_ip, 9999)
@@ -86,12 +85,7 @@ def del_ldld(paramList):
 
 	return ret_message
 
-def add_dld(paramList):
-	table_name = paramList[0].upper()
-	table_key = paramList[1]
-	table_partition = paramList[2]
-	src_ip = paramList[3]
-	dst_ip = paramList[4]
+def add_dld(table_name, table_key, table_partition, src_ip, dst_ip):
 	master_ip = Default.M6_MASTER_IP_ADDRESS
 
 	cmd = 'DLDADD %s,%s,%s,%s,%s\r\n' % (table_name, table_key, table_partition, src_ip, dst_ip)
@@ -103,12 +97,7 @@ def add_dld(paramList):
 
 	return ret_message
 
-def del_dld(paramList):
-	table_name = paramList[0].upper()
-	table_key = paramList[1]
-	table_partition = paramList[2]
-	src_ip = paramList[3]
-	dst_ip = paramList[4]
+def del_dld(table_name, table_key, table_partition, src_ip, dst_ip):
 	master_ip = Default.M6_MASTER_IP_ADDRESS
 
 	cmd = 'DLDDEL %s,%s,%s,%s,%s\r\n' % (table_name, table_key, table_partition, src_ip, dst_ip)
@@ -120,14 +109,8 @@ def del_dld(paramList):
 
 	return ret_message
 
-def test_dld(paramList):
+def test_dld(table_name, table_key, table_partition, src_ip, dst_ip):
 	ret_message = "+OK DLDTEST SUCCESS \r\n"
-
-	table_name = paramList[0].upper()
-	table_key = paramList[1]
-	table_partition = paramList[2]
-	src_ip = paramList[3]
-	dst_ip = paramList[4]
 	master_ip = Default.M6_MASTER_IP_ADDRESS
 
 	p_datetime = datetime.datetime.strptime(table_partition, '%Y%m%d%H%M%S')
@@ -167,12 +150,7 @@ def find_dld_match(dld_result_list, dst_ip, table_key, table_partition):
 	return rtn
 
 
-def del_backend(paramList):
-	table_name = paramList[0].upper()
-	table_key = paramList[1]
-	table_partition = paramList[2]
-	src_ip = paramList[3]
-	dst_ip = paramList[4]
+def del_backend(table_name, table_key, table_partition, src_ip, dst_ip):
 
 	cmd = 'DELETE %s,%s,%s,%s,%s\r\n' % (table_name, table_key, table_partition, src_ip, dst_ip)
 
@@ -183,12 +161,7 @@ def del_backend(paramList):
 
 	return ret_message
 
-def dsd_test(paramList):
-	table_name = paramList[0].upper()
-	table_key = paramList[1]
-	table_partition = paramList[2]
-	src_ip = paramList[3]
-	dst_ip = paramList[4]
+def dsd_test(table_name, table_key, table_partition, src_ip, dst_ip):
 	dsd_port =  Default.PORT['DSD']
 
 	cmd = 'DSDTEST %s,%s,%s,%s,%s\r\n' % (table_name, table_key, table_partition, src_ip, dst_ip)
@@ -200,8 +173,6 @@ def dsd_test(paramList):
 
 	return ret_message
 
-
-
 if __name__ == "__main__":
 	my_ip = Default.NODE_IP
 	fail_list = []
@@ -209,6 +180,9 @@ if __name__ == "__main__":
 		for line in f:
 			param = line[:-1]
 			paramList = param.split(',')
+			table_name = paramList[0].upper()
+			table_key = paramList[1]
+			table_partition = paramList[2]
 			src_ip = paramList[3]
 			dst_ip = paramList[4]
 
@@ -216,57 +190,85 @@ if __name__ == "__main__":
 				
 				print "---"
 				print paramList
-
-				ret_message = backend_send(paramList)
-				print ret_message
-				if ret_message[0][0] == '-':
-					print ret_message
-					fail_list.append(paramList)
-					continue
 			
-				ret_message = add_ldld(paramList)
-				print ret_message
-				if ret_message[0][0] == '-':
-					print ret_message
-					fail_list.append(paramList)
-					continue
+				# recovery process	
+				#ret_message = del_backend(table_name, table_key, table_partition, dst_ip, src_ip)
+				#print ret_message
+				#ret_message = del_ldld(table_name, table_key,table_partition, dst_ip, src_ip)
+				#print ret_message
+				#ret_message = del_dld(table_name, table_key, table_partition, dst_ip, src_ip)
+				#print ret_message
+				#ret_message = add_dld(table_name, table_key, table_partition, dst_ip, src_ip)
+				#print ret_message
+				#ret_message = add_ldld(table_name, table_key, table_partition, dst_ip, src_ip)
+				#print ret_message
+				#ret_message = backend_send(table_name, table_key, table_partition, dst_ip, src_ip)
+				#print ret_message
+				#ret_message = del_backend(table_name, table_key, table_partition, dst_ip, src_ip)
+				#print ret_message
 				
-				ret_message = add_dld(paramList)
-				print ret_message
+				
+				ret_message = backend_send(table_name, table_key, table_partition, src_ip, dst_ip)
+				print 'SEND : ',ret_message
 				if ret_message[0][0] == '-':
-					print ret_message
-					fail_list.append(paramList)
-					continue
-
-				ret_message = del_dld(paramList)
-				print ret_message
-				if ret_message[0][0] == '-':
-					print ret_message
-					fail_list.append(paramList)
-					continue
-
-				ret_message = del_ldld(paramList)
-				print ret_message
-				if ret_message[0][0] == '-':
-					print ret_message
+					print 'SEND : ',ret_message
+					paramList.append('SEND')
 					fail_list.append(paramList)
 					continue
 			   
-				ret_message = dsd_test(paramList)
-				print ret_message
+			   
+				ret_message = add_ldld(table_name, table_key, table_partition, src_ip, dst_ip)
+				print 'ADD_LDLD : ',ret_message
 				if ret_message[0][0] == '-':
-					print ret_message
+					print 'ADD_LDLD : ',ret_message
+					paramList.append('ADD_LDLD')
+					fail_list.append(paramList)
+					continue
+			 
+				ret_message = add_dld(table_name, table_key, table_partition, src_ip, dst_ip)
+				print 'ADD_DLD : ',ret_message
+				if ret_message[0][0] == '-':
+					print 'ADD_DLD : ',ret_message
+					paramList.append('ADD_DLD')
 					fail_list.append(paramList)
 					continue
 
-				ret_message = test_dld(paramList)
-				print ret_message
+				ret_message = del_dld(table_name, table_key, table_partition, src_ip, dst_ip)
+				print 'DEL_DLD : ',ret_message
 				if ret_message[0][0] == '-':
+					print 'DEL_DLD : ',ret_message
+					paramList.append('DEL_DLD')
 					fail_list.append(paramList)
 					continue
 
-				ret_message = del_backend(paramList)
-				print ret_message
+				ret_message = del_ldld(table_name, table_key, table_partition, src_ip, dst_ip)
+				print 'DEL_LDLD : ',ret_message
 				if ret_message[0][0] == '-':
+					print 'DEL_LDLD : ',ret_message
+					paramList.append('DEL_LDLD')
+					fail_list.append(paramList)
+					continue
+			
+				ret_message = dsd_test(table_name, table_key, table_partition, src_ip, dst_ip)
+				print 'DSD_TEST : ',ret_message
+				if ret_message[0][0] == '-':
+					print 'DSD_TEST : ',ret_message
+					paramList.append('DSD_TEST')
+					fail_list.append(paramList)
+					continue
+
+				ret_message = test_dld(table_name, table_key, table_partition, src_ip, dst_ip)
+				print 'DLD_TEST : ',ret_message
+				if ret_message[0][0] == '-':
+					print 'DLD_TEST : ',ret_message
+					paramList.append('DLD_TEST')
+					fail_list.append(paramList)
+					continue
+
+				ret_message = del_backend(table_name, table_key, table_partition, src_ip, dst_ip)
+				print 'DEL_BACKEND : ',ret_message
+				if ret_message[0][0] == '-':
+					print 'DEL_BACKEND : ',ret_message
+					paramList.append('DEL_BACKEND')
 					fail_list.append(paramList)
 					continue
