@@ -207,7 +207,7 @@ if __name__ == "__main__":
 				#ret_message = del_backend(table_name, table_key, table_partition, dst_ip, src_ip)
 				#print ret_message
 				
-				
+			
 				ret_message = backend_send(table_name, table_key, table_partition, src_ip, dst_ip)
 				print 'SEND : ',ret_message
 				if ret_message[0][0] == '-':
@@ -272,3 +272,11 @@ if __name__ == "__main__":
 					paramList.append('DEL_BACKEND')
 					fail_list.append(paramList)
 					continue
+
+
+	with open('./migration_recovery_info.dat', 'w') as rf:
+		for recovery_info in fail_list:
+			recovery_str = ','.join(recovery_info)
+			recovery_str += '\n'
+			rf.write(recovery_str)
+			
