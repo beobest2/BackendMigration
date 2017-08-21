@@ -3,6 +3,9 @@ import sys
 import cPickle
 import datetime
 import glob
+import threading
+import time
+import Queue
 
 import M6.Common.Default as Default
 
@@ -51,7 +54,7 @@ def add_ldld(table_name, table_key, table_partition, src_ip, dst_ip):
 
 		if len(glob.glob(slave_ram_dir)) != 0:
 			file_path = slave_ram_dir[:-1]  + '%s_%s_%s.DAT' % (table_name, table_key, table_partition)
-		elif len(glob.glob(disk_ram_dir)) != 0:
+		elif len(glob.glob(slave_disk_dir)) != 0:
 			file_path = slave_disk_dir[:-1]  + '%s_%s_%s.DAT' % (table_name, table_key, table_partition)
 			
 		if len(glob.glob(slave_ram_dir)) == 0 and len(glob.glob(slave_dir_dir)) == 0:
@@ -173,11 +176,95 @@ def dsd_test(table_name, table_key, table_partition, src_ip, dst_ip):
 
 	return ret_message
 
+def backend_migration(queue, table_name, table_key, table_partition, src_ip, dst_ip):
+	# recovery process	
+	#ret_message = del_backend(table_name, table_key, table_partition, dst_ip, src_ip)
+	#print ret_message
+	#ret_message = del_ldld(table_name, table_key,table_partition, dst_ip, src_ip)
+	#print ret_message
+	#ret_message = del_dld(table_name, table_key, table_partition, dst_ip, src_ip)
+	#print ret_message
+	#ret_message = add_dld(table_name, table_key, table_partition, dst_ip, src_ip)
+	#print ret_message
+	#ret_message = add_ldld(table_name, table_key, table_partition, dst_ip, src_ip)
+	#print ret_message
+	#ret_message = backend_send(table_name, table_key, table_partition, dst_ip, src_ip)
+	#print ret_message
+	#ret_message = del_backend(table_name, table_key, table_partition, dst_ip, src_ip)
+	#print ret_message
+	
+	ret_message = backend_send(table_name, table_key, table_partition, src_ip, dst_ip)
+	print 'SEND : ',ret_message
+	if ret_message[0][0] == '-':
+		#print 'SEND : ',ret_message
+		queue.put([table_name, table_key, table_partition, src_ip, dst_ip, 'SEND'])
+		return ret_message
+	
+	ret_message = add_ldld(table_name, table_key, table_partition, src_ip, dst_ip)
+	print 'ADD_LDLD : ',ret_message
+	if ret_message[0][0] == '-':
+		#print 'ADD_LDLD : ',ret_message
+		queue.put([table_name, table_key, table_partition, src_ip, dst_ip, 'ADD_LDLD'])
+		return ret_message
+
+	ret_message = add_dld(table_name, table_key, table_partition, src_ip, dst_ip)
+	print 'ADD_DLD : ',ret_message
+	if ret_message[0][0] == '-':
+		#print 'ADD_DLD : ',ret_message
+		queue.put([table_name, table_key, table_partition, src_ip, dst_ip, 'ADD_DLD'])
+		return ret_message
+
+	ret_message = del_dld(table_name, table_key, table_partition, src_ip, dst_ip)
+	print 'DEL_DLD : ',ret_message
+	if ret_message[0][0] == '-':
+		#print 'DEL_DLD : ',ret_message
+		queue.put([table_name, table_key, table_partition, src_ip, dst_ip, 'DEL_DLD'])
+		return ret_message
+
+	ret_message = del_ldld(table_name, table_key, table_partition, src_ip, dst_ip)
+	print 'DEL_LDLD : ',ret_message
+	if ret_message[0][0] == '-':
+		#print 'DEL_LDLD : ',ret_message
+		queue.put([table_name, table_key, table_partition, src_ip, dst_ip, 'DEL_LDLD'])
+		return ret_message
+
+	ret_message = dsd_test(table_name, table_key, table_partition, src_ip, dst_ip)
+	print 'DSD_TEST : ',ret_message
+	if ret_message[0][0] == '-':
+		#print 'DSD_TEST : ',ret_message
+		queue.put([table_name, table_key, table_partition, src_ip, dst_ip, 'DSD_TEST'])
+		return ret_message
+
+	ret_message = test_dld(table_name, table_key, table_partition, src_ip, dst_ip)
+	print 'DLD_TEST : ',ret_message
+	if ret_message[0][0] == '-':
+		#print 'DLD_TEST : ',ret_message
+		queue.put([table_name, table_key, table_partition, src_ip, dst_ip, 'DLD_TEST'])
+		return ret_message
+
+	ret_message = del_backend(table_name, table_key, table_partition, src_ip, dst_ip)
+	print 'DEL_BACKEND : ',ret_message
+	if ret_message[0][0] == '-':
+		#print 'DEL_BACKEND : ',ret_message
+		queue.put([table_name, table_key, table_partition, src_ip, dst_ip, 'DEL_BACKEND'])
+		return ret_message
+	
+	return ["+OK BMD Success"]
+
 if __name__ == "__main__":
 	my_ip = Default.NODE_IP
-	fail_list = []
-	with open('./migration_info.dat', 'r') as f:
-		for line in f:
+	queue = Queue.Queue()
+	thread_list = []
+	thread_cnt = 20
+	
+	start_time = time.time()
+	
+	f = open('./migration_info.dat', 'r')
+	while True:
+		if threading.activeCount() <= thread_cnt:
+			line = f.readline()
+			if not line:
+				break
 			param = line[:-1]
 			paramList = param.split(',')
 			table_name = paramList[0].upper()
@@ -187,96 +274,28 @@ if __name__ == "__main__":
 			dst_ip = paramList[4]
 
 			if my_ip == src_ip:
-				
+					
 				print "---"
 				print paramList
+					
+				bmd_thread = threading.Thread(target=backend_migration, args=(queue, table_name, table_key, table_partition, src_ip, dst_ip))
+				thread_list.append(bmd_thread)
+				bmd_thread.start()
+
+		else:
+			time.sleep(0.1)
 			
-				# recovery process	
-				#ret_message = del_backend(table_name, table_key, table_partition, dst_ip, src_ip)
-				#print ret_message
-				#ret_message = del_ldld(table_name, table_key,table_partition, dst_ip, src_ip)
-				#print ret_message
-				#ret_message = del_dld(table_name, table_key, table_partition, dst_ip, src_ip)
-				#print ret_message
-				#ret_message = add_dld(table_name, table_key, table_partition, dst_ip, src_ip)
-				#print ret_message
-				#ret_message = add_ldld(table_name, table_key, table_partition, dst_ip, src_ip)
-				#print ret_message
-				#ret_message = backend_send(table_name, table_key, table_partition, dst_ip, src_ip)
-				#print ret_message
-				#ret_message = del_backend(table_name, table_key, table_partition, dst_ip, src_ip)
-				#print ret_message
-				
+	for th in thread_list:
+		th.join()
 			
-				ret_message = backend_send(table_name, table_key, table_partition, src_ip, dst_ip)
-				print 'SEND : ',ret_message
-				if ret_message[0][0] == '-':
-					print 'SEND : ',ret_message
-					paramList.append('SEND')
-					fail_list.append(paramList)
-					continue
-			   
-			   
-				ret_message = add_ldld(table_name, table_key, table_partition, src_ip, dst_ip)
-				print 'ADD_LDLD : ',ret_message
-				if ret_message[0][0] == '-':
-					print 'ADD_LDLD : ',ret_message
-					paramList.append('ADD_LDLD')
-					fail_list.append(paramList)
-					continue
-			 
-				ret_message = add_dld(table_name, table_key, table_partition, src_ip, dst_ip)
-				print 'ADD_DLD : ',ret_message
-				if ret_message[0][0] == '-':
-					print 'ADD_DLD : ',ret_message
-					paramList.append('ADD_DLD')
-					fail_list.append(paramList)
-					continue
+	f.close() 
 
-				ret_message = del_dld(table_name, table_key, table_partition, src_ip, dst_ip)
-				print 'DEL_DLD : ',ret_message
-				if ret_message[0][0] == '-':
-					print 'DEL_DLD : ',ret_message
-					paramList.append('DEL_DLD')
-					fail_list.append(paramList)
-					continue
-
-				ret_message = del_ldld(table_name, table_key, table_partition, src_ip, dst_ip)
-				print 'DEL_LDLD : ',ret_message
-				if ret_message[0][0] == '-':
-					print 'DEL_LDLD : ',ret_message
-					paramList.append('DEL_LDLD')
-					fail_list.append(paramList)
-					continue
-			
-				ret_message = dsd_test(table_name, table_key, table_partition, src_ip, dst_ip)
-				print 'DSD_TEST : ',ret_message
-				if ret_message[0][0] == '-':
-					print 'DSD_TEST : ',ret_message
-					paramList.append('DSD_TEST')
-					fail_list.append(paramList)
-					continue
-
-				ret_message = test_dld(table_name, table_key, table_partition, src_ip, dst_ip)
-				print 'DLD_TEST : ',ret_message
-				if ret_message[0][0] == '-':
-					print 'DLD_TEST : ',ret_message
-					paramList.append('DLD_TEST')
-					fail_list.append(paramList)
-					continue
-
-				ret_message = del_backend(table_name, table_key, table_partition, src_ip, dst_ip)
-				print 'DEL_BACKEND : ',ret_message
-				if ret_message[0][0] == '-':
-					print 'DEL_BACKEND : ',ret_message
-					paramList.append('DEL_BACKEND')
-					fail_list.append(paramList)
-					continue
-
+	end_time = time.time()
 
 	with open('./migration_recovery_info.dat', 'w') as rf:
-		for recovery_info in fail_list:
-			recovery_str = ','.join(recovery_info)
-			recovery_str += '\n'
-			rf.write(recovery_str)
-			
+		while not queue.empty():
+			log_str = ','.join(queue.get())
+			log_str += '\n'
+			rf.write(log_str)
+	
+	print "Time : ", (end_time - start_time)
