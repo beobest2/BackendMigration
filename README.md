@@ -7,15 +7,15 @@ PL SSD
 PL HDD
 ```
 
-2. 마이스레이션 실행중 백엔드 이동으 방지하기 위해 모드 노드의 PL_RAM, PL_SSD, PR 정지
+2. 추가된 노드에 IRIS 설치 후 ./NodeAdd
+
+3. 마이스레이션 실행중 백엔드 이동으 방지하기 위해 모드 노드의 PL_RAM, PL_SSD, PR 정지
 
 ```
 mps term 27903
 mps term 27904
 mps term 27905
 ```
-
-3. 추가된 노드에 IRIS 설치 후 ./NodeAdd
 
 4. conf 파일 입력 
     1. 첫번째 줄에는 데이터 노드의 총 개수, 두 번째줄 부터 한 줄 씩 추가되는 노드의 아이피 주소를 입력
