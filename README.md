@@ -6,9 +6,18 @@ PL RAM
 PL SSD
 PL HDD
 ```
-2. 추가된 노드에 IRIS 설치 후 ./NodeAdd
 
-3. conf 파일 입력 
+2. 마이스레이션 실행중 백엔드 이동으 방지하기 위해 모드 노드의 PL_RAM, PL_SSD, PR 정지
+
+```
+mps term 27903
+mps term 27904
+mps term 27905
+```
+
+3. 추가된 노드에 IRIS 설치 후 ./NodeAdd
+
+4. conf 파일 입력 
     1. 첫번째 줄에는 데이터 노드의 총 개수, 두 번째줄 부터 한 줄 씩 추가되는 노드의 아이피 주소를 입력
     
 
@@ -21,19 +30,19 @@ ex )  기존 2대의 노드가 있고 3대가 추가될 경우
 192.168.000.003
 ```
 
-4. 마스터 노드에서 migration_info_maker.py 를 실행하여 파티션과 테이블명 입력 (하루 단위로 동작, 시작 파티션 입력)
+5. 마스터 노드에서 migration_info_maker.py 를 실행하여 파티션과 테이블명 입력 (하루 단위로 동작, 시작 파티션 입력)
 ```
 python migration_info_maker.py
 ```
-5. 마스터 노드에서 생성된 migration_info.dat 파일을, 기존에 있던 데이터 노드의 BMDClient.py가 있는 디렉토리로 복사
+6. 마스터 노드에서 생성된 migration_info.dat 파일을, 기존에 있던 데이터 노드의 BMDClient.py가 있는 디렉토리로 각각 복사
 ```
-scp migraton_info.dat [user]@[ip]:[path]
+scp migraton_info.dat [data_node_user]@[data_node_ip]:[data_node_path]
 ```
-6. 모든 노드에서 (마스터 노드, 기존 데이터 노드, 추가된 데이터 노드) BMD.py 실행 
+7. 모든 노드에서 (마스터 노드, 기존 데이터 노드, 추가된 데이터 노드) BMD.py 실행 
 ```
 python BMD.py
 ```
-7.  ( IRIS 모든 노드가 VALID, 모든 노드에서 BMD.py 서버가 실행되는 상태 ) ""기존 데이터 노드"" 에서 각각 BMDClient.py 실행
+8. 기존 데이터 노드 에서 각각 BMDClient.py 실행  ( IRIS 모든 노드가 VALID, 모든 노드에서 BMD.py 서버가 실행되는 상태, PL_RAM, PL_SSD, PLR 이 종료된 상태 확인 ) 
 ```
 python BMDClient.py
 ```
