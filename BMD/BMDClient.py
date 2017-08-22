@@ -176,7 +176,7 @@ def dsd_test(table_name, table_key, table_partition, src_ip, dst_ip):
 
 	return ret_message
 
-def backend_migration(queue, table_name, table_key, table_partition, src_ip, dst_ip):
+def backend_migration(dld_lock, ldld_lock, queue, table_name, table_key, table_partition, src_ip, dst_ip):
 	# recovery process	
 	#ret_message = del_backend(table_name, table_key, table_partition, dst_ip, src_ip)
 	#print ret_message
@@ -194,58 +194,68 @@ def backend_migration(queue, table_name, table_key, table_partition, src_ip, dst
 	#print ret_message
 	
 	ret_message = backend_send(table_name, table_key, table_partition, src_ip, dst_ip)
-	print 'SEND : ',ret_message
+    #print 'SEND : ',ret_message
 	if ret_message[0][0] == '-':
-		#print 'SEND : ',ret_message
+		print 'SEND : ',ret_message
 		queue.put([table_name, table_key, table_partition, src_ip, dst_ip, 'SEND'])
 		return ret_message
 	
+	ldld_lock.acquire()
 	ret_message = add_ldld(table_name, table_key, table_partition, src_ip, dst_ip)
-	print 'ADD_LDLD : ',ret_message
+	ldld_lock.release()
+	#print 'ADD_LDLD : ',ret_message
 	if ret_message[0][0] == '-':
-		#print 'ADD_LDLD : ',ret_message
+		print 'ADD_LDLD : ',ret_message
 		queue.put([table_name, table_key, table_partition, src_ip, dst_ip, 'ADD_LDLD'])
 		return ret_message
 
+	dld_lock.acquire()
 	ret_message = add_dld(table_name, table_key, table_partition, src_ip, dst_ip)
-	print 'ADD_DLD : ',ret_message
+	dld_lock.release()
+	#print 'ADD_DLD : ',ret_message
 	if ret_message[0][0] == '-':
-		#print 'ADD_DLD : ',ret_message
+		print 'ADD_DLD : ',ret_message
 		queue.put([table_name, table_key, table_partition, src_ip, dst_ip, 'ADD_DLD'])
 		return ret_message
 
+	dld_lock.acquire()
 	ret_message = del_dld(table_name, table_key, table_partition, src_ip, dst_ip)
-	print 'DEL_DLD : ',ret_message
+	dld_lock.release()
+	#print 'DEL_DLD : ',ret_message
 	if ret_message[0][0] == '-':
-		#print 'DEL_DLD : ',ret_message
+		print 'DEL_DLD : ',ret_message
 		queue.put([table_name, table_key, table_partition, src_ip, dst_ip, 'DEL_DLD'])
 		return ret_message
 
+	ldld_lock.acquire()
 	ret_message = del_ldld(table_name, table_key, table_partition, src_ip, dst_ip)
-	print 'DEL_LDLD : ',ret_message
+	ldld_lock.release()
+	#print 'DEL_LDLD : ',ret_message
 	if ret_message[0][0] == '-':
-		#print 'DEL_LDLD : ',ret_message
+		print 'DEL_LDLD : ',ret_message
 		queue.put([table_name, table_key, table_partition, src_ip, dst_ip, 'DEL_LDLD'])
 		return ret_message
 
 	ret_message = dsd_test(table_name, table_key, table_partition, src_ip, dst_ip)
-	print 'DSD_TEST : ',ret_message
+	#print 'DSD_TEST : ',ret_message
 	if ret_message[0][0] == '-':
-		#print 'DSD_TEST : ',ret_message
+		print 'DSD_TEST : ',ret_message
 		queue.put([table_name, table_key, table_partition, src_ip, dst_ip, 'DSD_TEST'])
 		return ret_message
 
+	dld_lock.acquire()
 	ret_message = test_dld(table_name, table_key, table_partition, src_ip, dst_ip)
-	print 'DLD_TEST : ',ret_message
+	dld_lock.release()
+	#print 'DLD_TEST : ',ret_message
 	if ret_message[0][0] == '-':
-		#print 'DLD_TEST : ',ret_message
+		print 'DLD_TEST : ',ret_message
 		queue.put([table_name, table_key, table_partition, src_ip, dst_ip, 'DLD_TEST'])
 		return ret_message
 
 	ret_message = del_backend(table_name, table_key, table_partition, src_ip, dst_ip)
-	print 'DEL_BACKEND : ',ret_message
+	#print 'DEL_BACKEND : ',ret_message
 	if ret_message[0][0] == '-':
-		#print 'DEL_BACKEND : ',ret_message
+		print 'DEL_BACKEND : ',ret_message
 		queue.put([table_name, table_key, table_partition, src_ip, dst_ip, 'DEL_BACKEND'])
 		return ret_message
 	
@@ -257,6 +267,9 @@ if __name__ == "__main__":
 	thread_list = []
 	thread_cnt = 20
 	
+	dld_lock = threading.Lock()
+	ldld_lock = threading.Lock()
+
 	start_time = time.time()
 	
 	f = open('./migration_info.dat', 'r')
@@ -278,7 +291,7 @@ if __name__ == "__main__":
 				print "---"
 				print paramList
 					
-				bmd_thread = threading.Thread(target=backend_migration, args=(queue, table_name, table_key, table_partition, src_ip, dst_ip))
+				bmd_thread = threading.Thread(target=backend_migration, args=(dld_lock, ldld_lock, queue, table_name, table_key, table_partition, src_ip, dst_ip))
 				thread_list.append(bmd_thread)
 				bmd_thread.start()
 
